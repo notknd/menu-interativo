@@ -10,7 +10,7 @@ Teste de menu para o projeto WormHole
 
 ## Dependências
 
-Biblioteca `curses`
+Biblioteca **`curses`**
 
 ### Requisitos no Termux
 
