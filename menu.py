@@ -3,106 +3,117 @@ import os
 import platform
 
 def executar_comando(opcao):
-    if opcao == 0:
-        comando = "nmap localhost"  # Comando para Opção 1
-    elif opcao == 1:
-        comando = "ping -c 4 google.com"  # Comando para Opção 2
-    elif opcao == 2:
-        comando = "ls -l"  # Comando para Opção 3
-    elif opcao == 3:
-        return  # Sair do programa
-    else:
-        comando = ""
-    
+    comandos = {
+        0: "nmap localhost",
+        1: "ping -c 4 google.com",
+        2: "ls -l"
+    }
+    comando = comandos.get(opcao, "")
     if comando:
-        if platform.system() == "Windows":
-            os.system(f'cmd /c {comando}')
-        else:
-            os.system(comando)
+        os.system(f'cmd /c {comando}' if platform.system() == "Windows" else comando)
 
-def mostrar_menu(stdscr):
+def mostrar_menu_compacto(stdscr):
     curses.curs_set(0)
-    stdscr.clear()
-    stdscr.refresh()
-
-    # Define as opções do menu com seus respectivos ícones
-    menu = [
-        ("nmap", " 🌐 "),     # Rede
-        ("ping", " 📶 "),     # Conexão
-        ("listar", " 📂 "),   # Pasta
-        ("Sair", " ❌ ")               # Sair
-    ]
+    menu = ["nmap", "ping", "listar", "Sair"]
     opcao_selecionada = 0
-
-    # Habilita o uso do mouse em curses
-    curses.mousemask(1)
-    curses.mouseinterval(0)
-
-    # Dimensões e espaçamento dos botões
-    button_width = 20
-    button_height = 5
-    padding = 3
 
     while True:
         stdscr.clear()
-
-        # Organize as opções em uma grade de 2x2
-        for idx, (opcao, icone) in enumerate(menu):
-            row = idx // 2  # Linha para organizar em 2x2
-            col = idx % 2   # Coluna para organizar em 2x2
-
-            # Calcula a posição x e y para cada botão
-            x = col * (button_width + padding)
-            y = row * (button_height + padding)
-
-            # Configura estilo do botão selecionado
+        for idx, opcao in enumerate(menu):
             if idx == opcao_selecionada:
                 stdscr.attron(curses.color_pair(1))
-                stdscr.addstr(y + 1, x + 3, f"{icone.center(button_width - 2)}")
-                stdscr.addstr(y + 3, x + 3, f"[{opcao.center(button_width - 2)}]")
+                stdscr.addstr(idx + 2, 5, f"> {opcao}")
                 stdscr.attroff(curses.color_pair(1))
             else:
-                stdscr.addstr(y + 1, x + 3, f"{icone.center(button_width - 2)}")
-                stdscr.addstr(y + 3, x + 3, f" {opcao.center(button_width - 2)} ")
-
-        # Atualiza a tela
+                stdscr.addstr(idx + 2, 5, f"  {opcao}")
         stdscr.refresh()
 
-        # Lê a entrada do usuário
         key = stdscr.getch()
-
-        # Navegação com teclado
-        if key == curses.KEY_UP and opcao_selecionada > 1:
-            opcao_selecionada -= 2
-        elif key == curses.KEY_DOWN and opcao_selecionada < 2:
-            opcao_selecionada += 2
-        elif key == curses.KEY_LEFT and opcao_selecionada % 2 != 0:
+        if key == curses.KEY_UP and opcao_selecionada > 0:
             opcao_selecionada -= 1
-        elif key == curses.KEY_RIGHT and opcao_selecionada % 2 == 0:
+        elif key == curses.KEY_DOWN and opcao_selecionada < len(menu) - 1:
             opcao_selecionada += 1
-        elif key == curses.KEY_ENTER or key in [10, 13]:
+        elif key in [10, 13]:
             if opcao_selecionada == 3:
-                break  # Sair
+                break
+            executar_comando(opcao_selecionada)
+
+def mostrar_menu_completo(stdscr):
+    curses.curs_set(0)
+    curses.mousemask(1)
+    curses.mouseinterval(0)
+    stdscr.clear()
+    stdscr.refresh()
+
+    menu = [
+        ("nmap", " 🌐 "),
+        ("ping", " 📶 "),
+        ("listar", " 📂 "),
+        ("Sair", " ❌ ")
+    ]
+    opcao_selecionada = 0
+    button_width, button_height, padding = 20, 5, 3
+
+    while True:
+        stdscr.clear()
+        for idx, (opcao, icone) in enumerate(menu):
+            row, col = divmod(idx, 2)
+            x, y = col * (button_width + padding), row * (button_height + padding)
+            is_selected = idx == opcao_selecionada
+            stdscr.attron(curses.color_pair(1 if is_selected else 2))
+            stdscr.addstr(y + 1, x + 3, icone.center(button_width - 2))
+            stdscr.addstr(y + 3, x + 3, f"[{opcao.center(button_width - 2)}]" if is_selected else f" {opcao.center(button_width - 2)} ")
+            stdscr.attroff(curses.color_pair(1 if is_selected else 2))
+        stdscr.refresh()
+
+        key = stdscr.getch()
+        if key in (curses.KEY_UP, curses.KEY_DOWN, curses.KEY_LEFT, curses.KEY_RIGHT):
+            if key == curses.KEY_UP and opcao_selecionada > 1:
+                opcao_selecionada -= 2
+            elif key == curses.KEY_DOWN and opcao_selecionada < 2:
+                opcao_selecionada += 2
+            elif key == curses.KEY_LEFT and opcao_selecionada % 2:
+                opcao_selecionada -= 1
+            elif key == curses.KEY_RIGHT and opcao_selecionada % 2 == 0:
+                opcao_selecionada += 1
+        elif key in [10, 13]:
+            if opcao_selecionada == 3:
+                break
             executar_comando(opcao_selecionada)
         elif key == curses.KEY_MOUSE:
             _, mx, my, _, _ = curses.getmouse()
-            # Verifica se o clique foi em algum dos botões
             for idx, (opcao, _) in enumerate(menu):
-                row = idx // 2
-                col = idx % 2
-                x = col * (button_width + padding)
-                y = row * (button_height + padding)
-                
-                # Detecta o clique dentro da área do botão
+                row, col = divmod(idx, 2)
+                x, y = col * (button_width + padding), row * (button_height + padding)
                 if y <= my < y + button_height and x <= mx < x + button_width:
                     if idx == 3:
-                        return  # Sair
+                        return
                     executar_comando(idx)
 
-# Configuração de cores para o menu
-curses.initscr()
-curses.start_color()
-curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_CYAN)
+def tela_inicial(stdscr):
+    stdscr.clear()
+    stdscr.addstr(2, 2, "Escolha o modo de interface:")
+    stdscr.addstr(4, 4, "1. Compacto (apenas texto)")
+    stdscr.addstr(5, 4, "2. Completo (botões maiores e mouse)")
+    stdscr.addstr(7, 2, "Pressione '1' ou '2' para selecionar.")
+    stdscr.refresh()
 
-# Executa o menu
-curses.wrapper(mostrar_menu)
+    while True:
+        key = stdscr.getch()
+        if key == ord('1'):
+            return "compacto"
+        elif key == ord('2'):
+            return "completo"
+
+def main(stdscr):
+    curses.start_color()
+    curses.init_pair(1, curses.COLOR_BLACK, curses.COLOR_WHITE)
+    curses.init_pair(2, curses.COLOR_WHITE, curses.COLOR_BLACK)
+
+    modo = tela_inicial(stdscr)
+    if modo == "compacto":
+        mostrar_menu_compacto(stdscr)
+    elif modo == "completo":
+        mostrar_menu_completo(stdscr)
+
+curses.wrapper(main)
