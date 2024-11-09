@@ -14,6 +14,6 @@ Biblioteca **`curses`**
 
 ### Requisitos no Termux
 
-**Python**
+Python
 **`ncurses`**
 
