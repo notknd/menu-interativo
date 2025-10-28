@@ -1,4 +1,4 @@
-# Menu Interativo Python
+# Menu CLI Python
 
 Teste de menu para o projeto WormHole
 
